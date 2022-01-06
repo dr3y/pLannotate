@@ -24,19 +24,19 @@ def BLAST(seq,wordsize=12, db='nr_db', task="BLAST"):
         subprocess.call( #remove -task blastn-short?
             (f'blastn -task blastn-short -query {query.name} -out {tmp.name} -perc_identity 95 ' #pi needed?
             f'-db {db} -max_target_seqs 20000 -culling_limit 25 -word_size {str(wordsize)} -outfmt "6 {flags}"'),
-            shell=True)
+            shell=True,stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 
     elif task == "DIAMOND":
         flags = 'qstart qend sseqid pident slen length sstart send qlen evalue'
         extras = '-l 1 --matrix PAM30 --id 10 --quiet'
         subprocess.call(f'diamond blastx -d {db} -q {query.name} -o {tmp.name} '
-                        f'{extras} --outfmt 6 {flags}',shell=True)
+                        f'{extras} --outfmt 6 {flags}',shell=True,stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 
     elif task == "infernal":
         flags = "--cut_ga --rfam --nohmmonly --fmt 2"
         cmd = f"cmscan {flags} --tblout {tmp.name} --clanin {db} {query.name}"
         print(cmd)
-        subprocess.call(cmd, shell=True)
+        subprocess.call(cmd, shell=True,stdout=subprocess.PIPE, stderr = subprocess.PIPE)
 
         inDf = parse_infernal(tmp.name)
 
@@ -236,7 +236,6 @@ def get_gbk(inDf,inSeq, is_linear, record = None):
         record.annotations["topology"] = "linear"
     else:
         record.annotations["topology"] = "circular"
-
     inDf['Type'] = inDf['Type'].str.replace("origin of replication", "rep_origin")
     for index in inDf.index:
         record.features.append(SeqFeature(
